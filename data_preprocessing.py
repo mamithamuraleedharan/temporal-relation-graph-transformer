@@ -1,8 +1,16 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
+import random
+from sklearn.model_selection import train_test_split
 
 train_path = "data/NeuralTemporalRelation-EMNLP19/data/trainset-temprel.xml"
 test_path = "data/NeuralTemporalRelation-EMNLP19/data/testset-temprel.xml"
+
+label_mapping = {
+    "BEFORE":0,
+    "AFTER":1,
+    "EQUAL":2,
+    "VAGUE":3}
 
 def data_processing_function(item):
     tokens = item.text.strip().split()
@@ -34,6 +42,7 @@ def data_processing_function(item):
         "event1_index": event1_index,
         "event2_index": event2_index,
         "relation": item.attrib["LABEL"],
+        "label": label_mapping[item.attrib["LABEL"]],
         "sent_diff": int(item.attrib["SENTDIFF"])
     }
 
@@ -50,11 +59,31 @@ def load_matres_data(file_path):
     dataframe = pd.DataFrame(processed_data)
 
     return dataframe
+
+def split_train_val(dataframe):
+    document_ids = dataframe["doc_id"].unique()
+    train_ids,val_ids = train_test_split(document_ids,test_size = 20,random_state=123)
+
+    train_data = dataframe[dataframe["doc_id"].isin(train_ids)].copy()
+    val_data = dataframe[dataframe["doc_id"].isin(val_ids)].copy()
+
+    return train_data, val_data
     
 
 if __name__ == "__main__":
-    train_data = load_matres_data(train_path)
+
+    train_val_data = load_matres_data(train_path)
     test_data = load_matres_data(test_path)
-    print("Train shape:",train_data.shape)
-    print("Test shape:",test_data.shape)
+    #splitting training data to train and val data
+    train_data,val_data = split_train_val(train_val_data)
+    #count of event pairs 
+    print("Train examples:",len(train_data))
+    print("Val examples:",len(val_data))
+    print("Test examples:",len(test_data))
+    
+    #print(train_data.iloc[0])
+    train_data.to_csv("processed_data/train.csv",index=False)
+    val_data.to_csv("processed_data/val.csv",index=False)
+    test_data.to_csv("processed_data/test.csv",index=False)
+    print("Dataset created")
     
