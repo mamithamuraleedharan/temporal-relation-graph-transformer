@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
         if val_accuracy>best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save(model.state_dict(),"bert_best.pt")
+            torch.save(model.state_dict(),"models/bert_best.pt")
             print("New best model saved!")
         print("----------------------")
 
