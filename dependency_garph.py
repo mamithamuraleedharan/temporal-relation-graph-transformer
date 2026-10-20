@@ -11,16 +11,25 @@ bert.eval()
 nlp = spacy.load("en_core_web_sm")
 
 
-def get_bert_embeddings(text):
+def get_bert_embeddings(words):
     """
-    Get a sentence. tokenize them and pass the tokens through bert. Return contexual embeddings
+    Takes spaCy tokenized words and returns BERT contextual embeddings.
     """
-    words = text.split()
     encoded = tokenizer(words,is_split_into_words= True,return_tensors="pt")
     outputs = bert(
         input_ids=encoded["input_ids"],
         attention_mask=encoded["attention_mask"])
-    return outputs.last_hidden_state
+    hidden_states = outputs.last_hidden_state
+    mapping = {}
+    for i,word_id in enumerate(encoded.word_ids()):
+        if word_id is None:
+            continue
+        if word_id not in mapping:
+            mapping[word_id] = i
+    
+    word_embeddings = torch.stack([hidden_states[0, mapping[i], :] for i in range(len(words))])
+    
+    return word_embeddings
 
 def get_pos_tags(doc):
     """
@@ -45,17 +54,40 @@ def create_pos_mapping():
         pos_mapping[tag] = i
     return pos_mapping
 
-
-if __name__ == "__main__":
-    text = "John finished his work before he left."
-    #contextual_embeddings = get_bert_embeddings(text)
-    words = text.split()
-    doc = nlp(text)
+def get_pos_one_hot(doc,pos_mapping):
+    """
+    Converts the POS tags of spaCy tokens into one-hot vectors.
+    """
     pos_tags = get_pos_tags(doc)
-    pos_mapping = create_pos_mapping()
     pos_ids = [pos_mapping[tag] for tag in pos_tags]
     pos_tensor = torch.tensor(pos_ids)
     pos_one_hot = F.one_hot(pos_tensor,num_classes=len(pos_mapping))
-    print(pos_one_hot.shape)
+    return pos_one_hot
+
+def get_combined_representations(text):
+    doc = nlp(text)
+    words = [token.text for token in doc]
+    contextual_embeddings = get_bert_embeddings(words)
+    pos_mapping = create_pos_mapping()
+    pos_one_hot = get_pos_one_hot(doc,pos_mapping)
+    combined_embeddings = torch.cat((contextual_embeddings, pos_one_hot.float()),dim=1)
+    return combined_embeddings
+
+def align_event_to_spacy(text,event_index,doc):
+    """
+    Converts a MATRES event index into its corresponding spaCy token index.
+    """
+    words = text.split(" ")
+    char_position = 0
+    for i in range(event_index):
+        char_position += len(words[i]) + 1
+    for token in doc:
+        if token.idx == char_position:
+            return token.i
+    raise ValueError("Event could not be aligned to spaCy tokens")
     
-    
+if __name__ == "__main__":
+    text = "John finished his work before he left."
+    combined_embeddings = get_combined_representations(text)
+    print("Input:", text)
+    print("Combined embedding shape:",combined_embeddings.shape)
