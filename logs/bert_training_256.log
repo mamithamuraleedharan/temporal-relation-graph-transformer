@@ -1,0 +1,30 @@
+/usr/local/lib/python3.12/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
+  warnings.warn(
+Device: cuda
+Training examples: 11890
+Validation examples: 850
+Epoch 1/10
+Train loss: 0.7044
+Validation loss: 0.7248
+Validation accuracy: 0.7541
+Time: 5.81 minutes
+New best model saved!
+----------------------
+Epoch 2/10
+Train loss: 0.4476
+Validation loss: 0.8143
+Validation accuracy: 0.7247
+Time: 5.88 minutes
+----------------------
+Epoch 3/10
+Train loss: 0.3003
+Validation loss: 0.8964
+Validation accuracy: 0.7282
+Time: 11.54 minutes
+----------------------
+Epoch 4/10
+Train loss: 0.2017
+Validation loss: 1.0812
+Validation accuracy: 0.7188
+Time: 14.12 minutes
+----------------------

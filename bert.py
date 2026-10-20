@@ -8,7 +8,7 @@ tokenizer =  AutoTokenizer.from_pretrained(MODEL,use_fast=True)
 
 def find_bert_index(text,event1_index,event2_index):
     words = text.split()
-    encoded = tokenizer(words,is_split_into_words=True, truncation=True,max_length=128,padding="max_length",return_tensors="pt")
+    encoded = tokenizer(words,is_split_into_words=True, truncation=True,max_length=256,padding="max_length",return_tensors="pt")
     word_ids = encoded.word_ids()
     bert_event1_index = None
     bert_event2_index = None  

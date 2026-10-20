@@ -81,17 +81,6 @@ def validate(model,val_loader,loss_function,device):
 
 if __name__ == "__main__":
     train_dataset = MatresDataset(TRAIN_PATH)
-    # removing the sentences that have length more than 128
-    valid_indices = []
-    for i in range(len(train_dataset)):
-        try:
-            train_dataset[i]
-            valid_indices.append(i)
-        except ValueError:
-            pass
-    train_dataset.data = train_dataset.data.iloc[valid_indices].reset_index(drop=True)
-    print("Training examples after filtering:",len(train_dataset))
-
     val_dataset = MatresDataset(VAL_PATH)
     
     # example = train_dataset[0]
@@ -102,6 +91,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Device:", device)
     model = BertBaseline().to(device)
+    batch = next(iter(train_loader))
     #loss function
     loss = nn.CrossEntropyLoss()
     optimizer = AdamW(model.parameters(),lr=0.00002)
@@ -123,7 +113,7 @@ if __name__ == "__main__":
 
         if val_accuracy>best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save(model.state_dict(),"models/bert_best.pt")
+            torch.save(model.state_dict(),"models/bert_best_256.pt")
             print("New best model saved!")
         print("----------------------")
 
