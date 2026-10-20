@@ -9,7 +9,7 @@ TEST_PATH = "processed_data/test.csv"
 
 def load_model(device):
     model = BertBaseline()
-    model.load_state_dict(torch.load("models/bert_best.pt", map_location=device,weights_only=True))
+    model.load_state_dict(torch.load("models/bert_best_256.pt", map_location=device,weights_only=True))
     model = model.to(device)
     model.eval()
     return model
