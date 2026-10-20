@@ -1,4 +1,8 @@
 import spacy
+import pandas as pd
+import torch.nn as nn
+from sequence_encoder import get_combined_representations
+
 nlp = spacy.load("en_core_web_sm")
 
 def build_dependency_graph(text):
@@ -14,13 +18,25 @@ def build_dependency_graph(text):
         edges.append((roots[i], "cross_sentence", roots[i + 1]))
     return edges,roots
 
+class NodeRepresentationInitializer(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = nn.Linear(788,256)
         
-    
+    def forward(self,x):
+        x = self.hidden(x)
+        return x
+ 
 
 if __name__ == "__main__":
-    text = "John finished his work. He left the office."
+    train_data = pd.read_csv("processed_data/train.csv")
+    sample = train_data.iloc[0]
+    text = sample["text"]
     edges,roots = build_dependency_graph(text)
-    print("Dependency edges:", edges)
-    print("Root nodes:", roots)
-    
-    
+    word_representations = get_combined_representations(text)
+    initializer = NodeRepresentationInitializer()
+    node_representations = initializer(word_representations)
+
+    print("Number of graph nodes:", len(nlp(text)))
+    print("Word representations:", word_representations.shape)
+    print("Initial node representations:", node_representations.shape)
