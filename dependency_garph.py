@@ -1,4 +1,5 @@
 import spacy
+import torch
 import pandas as pd
 import torch.nn as nn
 from sequence_encoder import get_combined_representations
@@ -26,17 +27,25 @@ class NodeRepresentationInitializer(nn.Module):
     def forward(self,x):
         x = self.hidden(x)
         return x
- 
-
+        
+def create_adjacency_matrix(num_nodes,edges):
+    """
+    Converts dependency edges into adjacency matrix.
+    """
+    adj_matrix = torch.zeros((num_nodes,num_nodes),dtype=torch.bool)
+    adj_matrix.fill_diagonal_(True)
+    for source,relation,target in edges:
+        adj_matrix[source,target] = True
+        adj_matrix[target,source] = True
+    return adj_matrix
+        
 if __name__ == "__main__":
-    train_data = pd.read_csv("processed_data/train.csv")
-    sample = train_data.iloc[0]
-    text = sample["text"]
+    text = "John finished his work before he left."
     edges,roots = build_dependency_graph(text)
-    word_representations = get_combined_representations(text)
-    initializer = NodeRepresentationInitializer()
-    node_representations = initializer(word_representations)
-
-    print("Number of graph nodes:", len(nlp(text)))
-    print("Word representations:", word_representations.shape)
-    print("Initial node representations:", node_representations.shape)
+    num_nodes = len(nlp(text))
+    adj_matrix = create_adjacency_matrix(num_nodes, edges)
+    attention_mask = torch.logical_not(adj_matrix)
+    print("Adjacency matrix:")
+    print(adj_matrix.int())
+    print("\nAttention mask:")
+    print(attention_mask.int())
