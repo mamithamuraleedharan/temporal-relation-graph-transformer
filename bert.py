@@ -1,28 +1,32 @@
 from transformers import AutoTokenizer,BertModel
 import torch
 import torch.nn as nn
+import pandas as pd
+
 
 MODEL = "google-bert/bert-base-uncased"
 
 tokenizer =  AutoTokenizer.from_pretrained(MODEL,use_fast=True)
 
 def find_bert_index(text,event1_index,event2_index):
-    words = text.split()
-    encoded = tokenizer(words,is_split_into_words=True, truncation=True,max_length=256,padding="max_length",return_tensors="pt")
-    word_ids = encoded.word_ids()
+    words = text.split(" ")
+    event1_char = sum(len(word) + 1 for word in words[:event1_index])
+    event2_char = sum(len(word) + 1 for word in words[:event2_index])
+    encoded = tokenizer(text, truncation=True, max_length=256, padding="max_length",return_offsets_mapping=True, return_tensors="pt")
+    offsets = encoded["offset_mapping"][0]
     bert_event1_index = None
     bert_event2_index = None  
-    for i,word_id in enumerate(word_ids):
-        if word_id == event1_index and bert_event1_index is None:
+    for i, (start, end) in enumerate(offsets.tolist()):
+        if start <= event1_char < end and bert_event1_index is None:
             bert_event1_index = i
-        if word_id == event2_index and bert_event2_index is None:
+        if start <= event2_char < end and bert_event2_index is None:
             bert_event2_index = i
+    
     if bert_event1_index is None or bert_event2_index is None:
         raise ValueError("Error")
+    encoded.pop("offset_mapping")
     return encoded, bert_event1_index, bert_event2_index
     
-
-
 class BertBaseline(nn.Module):
     def __init__(self):
         super().__init__()

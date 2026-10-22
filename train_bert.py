@@ -5,6 +5,7 @@ from bert import BertBaseline, find_bert_index
 from torch.utils.data import Dataset, DataLoader
 from torch.optim import AdamW
 import time
+from tqdm.auto import tqdm
 
 TRAIN_PATH = "processed_data/train.csv"
 VAL_PATH = "processed_data/val.csv"
@@ -35,18 +36,23 @@ class MatresDataset(Dataset):
 def train_one_epoch(model,train_loader,loss_function,optimizer, device):
     model.train()
     total_loss = 0
-    for batch in train_loader:
+    progress_bar = tqdm(train_loader, desc="Training", leave=False)
+    for batch in progress_bar:
         input_ids = batch["input_ids"].to(device)
         attention_mask = batch["attention_mask"].to(device)
         event1_index = batch["event1_index"].to(device)
         event2_index = batch["event2_index"].to(device)
         labels = batch["label"].to(device)
+        
         pred = model(input_ids,attention_mask,event1_index,event2_index)
         loss = loss_function(pred,labels)
+        
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        
         total_loss = total_loss+loss.item()
+        progress_bar.set_postfix(loss=f"{total_loss / (progress_bar.n + 1):.4f}")
 
     average_loss = total_loss/len(train_loader)
     return average_loss
@@ -91,7 +97,6 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Device:", device)
     model = BertBaseline().to(device)
-    batch = next(iter(train_loader))
     #loss function
     loss = nn.CrossEntropyLoss()
     optimizer = AdamW(model.parameters(),lr=0.00002)
@@ -101,11 +106,11 @@ if __name__ == "__main__":
     epochs = 10
     best_val_accuracy = 0.0
     for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs}", flush=True)
         start_time = time.time()
         train_loss = train_one_epoch(model,train_loader,loss,optimizer,device)
         val_loss,val_accuracy = validate(model,val_loader,loss,device)
         stop_time = time.time()-start_time
-        print(f"Epoch {epoch + 1}/{epochs}")
         print(f"Train loss: {train_loss:.4f}")
         print(f"Validation loss: {val_loss:.4f}")
         print(f"Validation accuracy: {val_accuracy:.4f}")
