@@ -6,6 +6,7 @@ from graph_attention import GraphMultiheadAttention
 from dependency_garph import nlp,NodeRepresentationInitializer,create_adjacency_matrix,build_dependency_graph, get_dependency_path,get_path_triples,create_dependency_mapping,prepare_dependency_triples
 from syntax_guided_attention import SyntaxGuidedAttention
 from node_fusion import NodeRepresentationFusion
+from temporal_classifier import TemporalRelationClassifier
 
 class SGTModel(nn.Module):
     def __init__(self):
@@ -14,6 +15,7 @@ class SGTModel(nn.Module):
         self.graph_attention = GraphMultiheadAttention()
         self.syntax_attention = SyntaxGuidedAttention()
         self.node_fusion = NodeRepresentationFusion()
+        self.temporal_classifier = TemporalRelationClassifier()
 
     def forward(self,word_representations,edges,event1_index,event2_index):
         node_representations = self.node_initializer(word_representations)
@@ -32,6 +34,8 @@ class SGTModel(nn.Module):
         event2 = node_representations[event2_index]
         syntax_representation = self.syntax_attention(event1,event2,prepared_triples)
         fused_representations = self.node_fusion(graph_output,node_representations, event1_index,event2_index,syntax_representation)
-        return fused_representations
-
+        event1_final = fused_representations[event1_index]
+        event2_final = fused_representations[event2_index]
+        logits = self.temporal_classifier(event1_final,event2_final)
+        return logits
 
