@@ -8,6 +8,8 @@ import torch.nn.functional as F
 
 bert = BertModel.from_pretrained(MODEL)
 bert.eval()
+for parameter in bert.parameters():
+    parameter.requires_grad = False
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -16,9 +18,10 @@ def get_bert_embeddings(words):
     Takes spaCy tokenized words and returns BERT contextual embeddings.
     """
     encoded = tokenizer(words,is_split_into_words= True,return_tensors="pt")
-    outputs = bert(
-        input_ids=encoded["input_ids"],
-        attention_mask=encoded["attention_mask"])
+    with torch.no_grad():
+        outputs = bert(
+            input_ids=encoded["input_ids"],
+            attention_mask=encoded["attention_mask"])
     hidden_states = outputs.last_hidden_state
     mapping = {}
     for i,word_id in enumerate(encoded.word_ids()):
@@ -26,8 +29,18 @@ def get_bert_embeddings(words):
             continue
         if word_id not in mapping:
             mapping[word_id] = i
-    
-    word_embeddings = torch.stack([hidden_states[0, mapping[i], :] for i in range(len(words))])
+
+
+    word_embeddings = torch.stack([
+    hidden_states[0, mapping[i], :]
+    if i in mapping
+    else torch.zeros(
+        hidden_states.shape[-1],
+        dtype=hidden_states.dtype,
+        device=hidden_states.device
+    )
+    for i in range(len(words))
+])
     
     return word_embeddings
 
@@ -86,8 +99,3 @@ def align_event_to_spacy(text,event_index,doc):
             return token.i
     raise ValueError("Event could not be aligned to spaCy tokens")
     
-if __name__ == "__main__":
-    text = "John finished his work before he left."
-    combined_embeddings = get_combined_representations(text)
-    print("Input:", text)
-    print("Combined embedding shape:",combined_embeddings.shape)
