@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score,classification_report, confusion_matrix
 from bert import BertBaseline
 from train_bert import MatresDataset
+import pandas as pd
 
 VAL_PATH = "processed_data/val.csv"
 TEST_PATH = "processed_data/test.csv"
@@ -38,6 +39,19 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset,batch_size=8,shuffle=False)
     model = load_model(device)
     actual_labels,predictions = evaluate(model,test_loader,device)
+    results_df = pd.read_csv(TEST_PATH)
+
+    assert len(results_df) == len(predictions)
+    assert results_df["label"].tolist() == actual_labels
+    
+    results_df["bert_prediction"] = predictions
+    
+    results_df.to_csv(
+        "processed_data/bert_test_predictions.csv",
+        index=False
+    )
+    
+    print("BERT predictions saved successfully!")
     print("Test Accuracy:",accuracy_score(actual_labels, predictions))
     print("\nClassification Report:")
     print(classification_report(actual_labels,predictions,

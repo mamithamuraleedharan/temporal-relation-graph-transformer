@@ -1,0 +1,23 @@
+/usr/local/lib/python3.12/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
+  warnings.warn(
+Test examples: 837
+Test Accuracy: 0.6021505376344086
+
+Classification Report:
+              precision    recall  f1-score   support
+
+      BEFORE       0.77      0.74      0.75       427
+       AFTER       0.77      0.60      0.68       271
+       EQUAL       0.01      0.03      0.02        30
+       VAGUE       0.19      0.24      0.21       109
+
+    accuracy                           0.60       837
+   macro avg       0.44      0.40      0.41       837
+weighted avg       0.67      0.60      0.63       837
+
+
+Confusion Matrix:
+[[314  29  34  50]
+ [ 32 163  27  49]
+ [ 11   7   1  11]
+ [ 53  12  18  26]]
