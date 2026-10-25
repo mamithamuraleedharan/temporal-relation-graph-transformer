@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import pandas as pd
-from sequence_encoder import get_combined_representations,align_event_to_spacy
+from sequence_encoder import get_combined_representations,align_event_to_spacy,bert
 from graph_attention import GraphMultiheadAttention
 from dependency_garph import nlp,NodeRepresentationInitializer,create_adjacency_matrix,build_dependency_graph, get_dependency_path,get_path_triples,create_dependency_mapping,prepare_dependency_triples
 from syntax_guided_attention import SyntaxGuidedAttention
@@ -11,6 +11,7 @@ from temporal_classifier import TemporalRelationClassifier
 class SGTModel(nn.Module):
     def __init__(self):
         super().__init__()
+        self.bert = bert
         self.node_initializer = NodeRepresentationInitializer()
         self.graph_attention = GraphMultiheadAttention()
         self.syntax_attention = SyntaxGuidedAttention()

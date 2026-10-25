@@ -9,7 +9,7 @@ TEST_PATH = "processed_data/test.csv"
 
 def load_model(device):
     model = SGTModel()
-    model.load_state_dict(torch.load("models/sgt_lr_1e5_paper_best.pt", map_location=device,weights_only=True))
+    model.load_state_dict(torch.load("models/sgt_bert_finetuned_best.pt", map_location=device,weights_only=True))
     model = model.to(device)
     model.eval()
     return model
