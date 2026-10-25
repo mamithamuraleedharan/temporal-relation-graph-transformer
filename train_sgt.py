@@ -42,11 +42,8 @@ def prepare_sgt_sample(sample):
 
     event1_spacy_index = align_event_to_spacy(text,event1_index,doc)  
     event2_spacy_index = align_event_to_spacy(text,event2_index,doc)
-    if text in embedding_cache:
-        word_representations = embedding_cache[text]
-    else:
-        word_representations = get_combined_representations(text)
-        embedding_cache[text] = word_representations
+    
+    word_representations = get_combined_representations(text)
     edges,roots = build_dependency_graph(text)
 
     return {
@@ -118,41 +115,62 @@ def validate(model,val_loader,loss_function,device):
     average="macro",zero_division=0)
     return average_loss,accuracy,macro_f1
             
+
 if __name__ == "__main__":
     os.makedirs("models", exist_ok=True)
     os.makedirs("logs", exist_ok=True)
+    torch.manual_seed(42)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(42)
 
     train_dataset = SGTDataset("processed_data/train.csv")
     val_dataset = SGTDataset("processed_data/val.csv")
 
-    train_loader = DataLoader(train_dataset,batch_size=1,shuffle=True)
-    val_loader = DataLoader(val_dataset,batch_size=1,shuffle=False)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=1,
+        shuffle=True
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=1,
+        shuffle=False
+    )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    torch.manual_seed(42)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(42)
     model = SGTModel().to(device)
-    class_weights = torch.tensor([0.497, 0.705, 7.525, 2.295], dtype=torch.float32,device=device)
     loss_function = nn.CrossEntropyLoss()
-    optimizer = AdamW(model.parameters(), lr=1e-5)
+    optimizer = AdamW([
+        {
+            "params": model.bert.parameters(),
+            "lr": 1e-5
+        },
+        {
+            "params": [
+                param for name, param in model.named_parameters()
+                if not name.startswith("bert.")
+            ],
+            "lr": 1e-4
+        }
+    ])
 
     epochs = 5
     best_val_macro_f1 = -1.0
-
     print("Device:", device)
     print("Training examples:", len(train_dataset))
     print("Validation examples:", len(val_dataset))
     print("Epochs:", epochs)
-    print("Learning rate:", optimizer.param_groups[0]["lr"])
-
+    print("BERT learning rate:", optimizer.param_groups[0]["lr"])
+    print("SGT learning rate:", optimizer.param_groups[1]["lr"])
     for epoch in range(epochs):
         start_time = time.time()
         print(f"\nEpoch {epoch + 1}/{epochs}", flush=True)
-        train_loss = train_one_epoch(model,train_loader,loss_function,optimizer,device)
-        val_loss,val_accuracy,val_macro_f1  = validate(model, val_loader, loss_function,device)
+
+        train_loss = train_one_epoch(model,train_loader,loss_function, optimizer,device)
+        val_loss,val_accuracy,val_macro_f1 = validate(model,val_loader, loss_function,device)
         elapsed = time.time() - start_time
-        
+
         print(f"Train loss: {train_loss:.4f}")
         print(f"Validation loss: {val_loss:.4f}")
         print(f"Validation accuracy: {val_accuracy:.4f}")
@@ -162,6 +180,6 @@ if __name__ == "__main__":
         if val_macro_f1 > best_val_macro_f1:
             best_val_macro_f1 = val_macro_f1
 
-            torch.save(model.state_dict(),"models/sgt_lr_1e5_paper_best.pt")
-            print("New best SGT model saved!")
+            torch.save(model.state_dict(), "models/sgt_bert_finetuned_best.pt")
+            print("New best fine-tuned SGT model saved!")
         print("----------------------", flush=True)

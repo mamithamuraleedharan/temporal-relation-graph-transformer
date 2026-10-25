@@ -7,9 +7,7 @@ import torch
 import torch.nn.functional as F
 
 bert = BertModel.from_pretrained(MODEL)
-bert.eval()
-for parameter in bert.parameters():
-    parameter.requires_grad = False
+
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -18,10 +16,14 @@ def get_bert_embeddings(words):
     Takes spaCy tokenized words and returns BERT contextual embeddings.
     """
     encoded = tokenizer(words,is_split_into_words= True,return_tensors="pt")
-    with torch.no_grad():
-        outputs = bert(
-            input_ids=encoded["input_ids"],
-            attention_mask=encoded["attention_mask"])
+    
+    device = next(bert.parameters()).device
+    input_ids = encoded["input_ids"].to(device)
+    attention_mask = encoded["attention_mask"].to(device) 
+    
+    outputs = bert(
+        input_ids=input_ids,
+        attention_mask=attention_mask)
     hidden_states = outputs.last_hidden_state
     mapping = {}
     for i,word_id in enumerate(encoded.word_ids()):
@@ -83,6 +85,7 @@ def get_combined_representations(text):
     contextual_embeddings = get_bert_embeddings(words)
     pos_mapping = create_pos_mapping()
     pos_one_hot = get_pos_one_hot(doc,pos_mapping)
+    pos_one_hot = pos_one_hot.to(contextual_embeddings.device)
     combined_embeddings = torch.cat((contextual_embeddings, pos_one_hot.float()),dim=1)
     return combined_embeddings
 
