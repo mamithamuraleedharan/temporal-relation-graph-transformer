@@ -12,15 +12,14 @@ Link : https://github.com/qiangning/NeuralTemporalRelation-EMNLP19
 
 # Requirements
 The project is implemented in Python and uses the following libraries:
-PyTorch
-Transformers(Hugging Face)
-spaCy(en_core_web_sm)
-NetworkX
-pandas
-NumPy
-scikit-learn
-
-Pretrained language model: google-bert/bert-base-uncased
+- PyTorch
+- Transformers(Hugging Face)
+- spaCy(en_core_web_sm)
+- NetworkX
+- pandas
+- NumPy
+- scikit-learn
+- Pretrained language model: google-bert/bert-base-uncased
 
 # Project Structure
 
