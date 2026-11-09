@@ -1,7 +1,7 @@
 # Temporal Relation Extraction
 Temporal Relation Extraction is the task of identifying temporal relationships between events in text. One major challenge is determining temporal relationships between events that are far apart or embedded in complex grammatical structures. This study investigates whether using syntactic dependency information can improve temporal relation classification by comparing a BERT baseline model with a Syntax-Guided Graph Transformer (SGT) on the MATRES dataset. The study also examines linear event distance and dependency path length.
 
-This project is in reference to the paper Extracting Temporal Event Relation with Syntax-Guided Graph Transformer
+This project implements a simplified version of the paper Extracting Temporal Event Relation with Syntax-Guided Graph Transformer
 
 Link : https://aclanthology.org/2022.findings-naacl.29/
 
