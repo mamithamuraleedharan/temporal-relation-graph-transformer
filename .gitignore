@@ -17,3 +17,5 @@ checkpoints/
 
 # OS
 .DS_Store
+!models/bert_best_256.pt
+!models/sgt_bert_finetuned_best.pt
